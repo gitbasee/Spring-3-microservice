@@ -1,0 +1,89 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: USER-SERVICE
+  datasource:
+    url: jdbc:mysql://localhost:3306/microservices_user
+    username: root
+    password: Baseem123
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+
+  config:
+    import: configserver:http://localhost:8085
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: https://dev-32852408.okta.com/oauth2/default
+      client:
+        registration:
+          my-internal-client:
+            provider: okta
+            authorizationGrantType: client_credentials
+            scope: internal
+            clientId: 0oaaqetducZd3ishq5d7
+            clientSecret: QdTAmJJcyL7_aZtkREBT9PsXl43Nf-wA_nbU43SQ1vbhbdmAygP5IjdiLfp-LOOB
+        provider:
+          okta:
+            issuerUri: https://dev-32852408.okta.com/oauth2/default
+
+management:
+  health:
+    circuit-breakers:
+      enabled: true
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: always
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      Rating-Hotel-breaker:
+        registerHealthIndicator: true
+        eventConsumerBufferSize: 10
+        failureRateThreshold: 50
+        minimumNumberOfCalls: 5
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        waitDurationInOpenState: 6s
+        permittedNumberOfCallsInHalfOpenState: 3
+        slidingWindowSize: 10
+        slidingWindowType: COUNT_BASED
+  retry:
+    instances:
+      Rating-Hotel-Retry:
+        maxAttempts: 3
+        waitDuration: 5s
+  ratelimiter:
+    instances:
+      Rating-Hotel-RateLimiter:
+        limitForPeriod: 2
+        limitRefreshPeriod: 4s
+        timeoutDuration: 2s
+okta:
+  oauth2:
+    issuer: https://dev-32852408.okta.com/oauth2/default
+    audience: api://default
+    client-id: 0oaaqetducZd3ishq5d7
+    client-secret: QdTAmJJcyL7_aZtkREBT9PsXl43Nf-wA_nbU43SQ1vbhbdmAygP5IjdiLfp-LOOB
+    scopes: openid, profile, email, offline_access
+
+#Now we are getting this config from github
+#eureka:
+#  instance:
+#    prefer-ip-address: true
+#  client:
+#    fetch-registry: true
+#    register-with-eureka: true
+#    service-url:
+#      defaultZone: http://localhost:8761/eureka
